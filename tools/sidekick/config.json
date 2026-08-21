@@ -1,0 +1,10 @@
+{
+    "project": "wknd",
+    "plugins": [
+        {
+            "id": "google-assist",
+            "title": "Google Assist",
+            "url": "https://example.com/tools/google-assist.html"
+        }
+    ]
+}
