@@ -1,67 +1,33 @@
-const SCHEDULE_URL = '/schedules/main-promo.json';
-
-async function getPromoSchedule() {
-  const response = await fetch(SCHEDULE_URL);
-
-  if (!response.ok) {
-    throw new Error(`Failed to load promo schedule: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-function getActivePromo(schedule) {
-  const promos = schedule.data || [];
-  const now = new Date();
-
-  const activePromo = promos.find((promo) => {
-    if (!promo.start || !promo.end) {
-      return false;
-    }
-
-    const start = new Date(promo.start);
-    const end = new Date(promo.end);
-
-    return now >= start && now < end;
-  });
-
-  return activePromo || promos.find((promo) => !promo.start && !promo.end);
-}
-
-async function loadPromoFragment(url) {
-  const fragmentPath = new URL(url).pathname;
-
-  const response = await fetch(`${fragmentPath}.plain.html`);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to load promo fragment: ${fragmentPath} (${response.status})`,
-    );
-  }
-
-  return response.text();
-}
+import { getScheduledPromo } from '../schedule/schedule.js';
 
 export default async function decorate(block) {
   try {
     console.log('PROMO JS LOADED');
 
-    const schedule = await getPromoSchedule();
-
-    console.log('PROMO SCHEDULE:', schedule);
-
-    const activePromo = getActivePromo(schedule);
+    const activePromo = await getScheduledPromo();
 
     console.log('ACTIVE PROMO:', activePromo);
 
     if (!activePromo || !activePromo.fragment) {
-      console.error('No active promo found');
+      console.error('No promo fragment found');
       return;
     }
 
-    const html = await loadPromoFragment(activePromo.fragment);
+    const fragmentPath = new URL(
+      activePromo.fragment,
+      window.location.origin,
+    ).pathname;
 
-    console.log('PROMO FRAGMENT LOADED');
+    console.log('FRAGMENT PATH:', fragmentPath);
+
+    // Load the selected fragment directly
+    const response = await fetch(`${fragmentPath}.plain.html`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to load fragment: ${fragmentPath}`);
+    }
+
+    const html = await response.text();
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
